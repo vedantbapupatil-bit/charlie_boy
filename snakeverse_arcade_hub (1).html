@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SNAKEVERSE | ULTIMATE ARCADE</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        xbox: {
+                            green: '#107C10',
+                            neon: '#2EE643',
+                            glow: '#00FF66',
+                            dark: '#07090E',
+                            card: '#10141E',
+                            panel: '#181E2C',
+                            border: '#2A3447'
+                        },
+                        cyber: {
+                            blue: '#00D2FF',
+                            purple: '#9D4EDD',
+                            pink: '#FF007F',
+                            orange: '#FF6B00',
+                            yellow: '#FFD700',
+                            red: '#FF2A5F',
+                            cyan: '#00F5D4'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Rajdhani', 'Inter', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #07090E;
+            color: #E2E8F0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* Glassmorphism & Neon Borders */
+        .glass-panel {
+            background: rgba(16, 20, 30, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(42, 52, 71, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-card {
+            background: linear-gradient(135deg, rgba(24, 30, 44, 0.8) 0%, rgba(12, 16, 25, 0.9) 100%);
+            border: 1px solid rgba(46, 230, 67, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(46, 230, 67, 0.6);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 255, 102, 0.25);
+        }
+        
+        /* Custom Glowing Elements */
+        .glow-xbox { box-shadow: 0 0 20px rgba(0, 255, 102, 0.35); }
+        .text-glow-xbox { text-shadow: 0 0 10px rgba(46, 230, 67, 0.6); }
+        .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 245, 212, 0.6); }
+        .text-glow-purple { text-shadow: 0 0 10px rgba(157, 78, 221, 0.6); }
+        
+        /* Scanline Overlay */
+        .scanlines {
+            position: relative;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #07090E; }
+        ::-webkit-scrollbar-thumb { background: #181E2C; border-radius: 3px; border: 1px solid #2EE643; }
+        ::-webkit-scrollbar-thumb:hover { background: #2EE643; }
+
+        /* Canvas Overlay Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 15px rgba(46, 230, 67, 0.4)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(46, 230, 67, 0.8)); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 3s infinite ease-in-out; }
+        
+        /* Dynamic Ability Ready Pulse */
+        .ability-ready {
+            animation: pulse-ability 1.2s infinite ease-in-out;
+        }
+        @keyframes pulse-ability {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px #00FF66; }
+            50% { transform: scale(1.05); box-shadow: 0 0 25px #00FF66, 0 0 40px #00F5D4; }
+        }
+
+        /* Responsive D-Pad Grid */
+        .dpad-btn {
+            background: rgba(24, 30, 44, 0.9);
+            border: 2px solid rgba(46, 230, 67, 0.4);
+            color: #2EE643;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            touch-action: manipulation;
+        }
+        .dpad-btn:active {
+            background: #2EE643;
+            color: #07090E;
+            box-shadow: 0 0 15px #00FF66;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-xbox-dark text-slate-100 scanlines select-none">
+
+    <!-- BACKGROUND AMBIENT CANVAS -->
+    <canvas id="bgCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-30"></canvas>
+
+    <!-- TOP CONSOLE NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 w-full glass-panel border-b border-xbox-border px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showView('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-xbox-green to-xbox-glow flex items-center justify-center glow-xbox">
+                    <i class="fa-brands fa-xbox text-2xl text-xbox-dark"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-black text-xl tracking-wider text-white flex items-center gap-1.5">
+                        SNAKE<span class="text-xbox-neon">VERSE</span>
+                    </h1>
+                    <p class="text-[10px] tracking-widest text-slate-400 font-mono">ULTIMATE ARCADE v3.5</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs (Desktop) -->
+            <nav class="hidden lg:flex items-center space-x-1 bg-xbox-card/60 p-1 rounded-xl border border-xbox-border/50">
+                <button onclick="showView('home')" id="nav-home" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-xbox-neon bg-xbox-green/20">
+                    <i class="fa-solid fa-house"></i> Home
+                </button>
+                <button onclick="showView('modes')" id="nav-modes" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-gamepad"></i> Modes
+                </button>
+                <button onclick="showView('snakes')" id="nav-snakes" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-worm"></i> Snakes
+                </button>
+                <button onclick="showView('worlds')" id="nav-worlds" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-globe"></i> Worlds
+                </button>
+                <button onclick="showView('challenges')" id="nav-challenges" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-calendar-check"></i> Daily
+                </button>
+                <button onclick="showView('achievements')" id="nav-achievements" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-trophy"></i> Badges
+                </button>
+                <button onclick="showView('leaderboard')" id="nav-leaderboard" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-ranking-star"></i> Ranks
+                </button>
+                <button onclick="showView('settings')" id="nav-settings" class="nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5">
+                    <i class="fa-solid fa-gear"></i> System
+                </button>
+            </nav>
+
+            <!-- User Player Stats Pill & Audio -->
+            <div class="flex items-center space-x-3">
+                <!-- Audio Mute Toggle -->
+                <button id="audio-toggle-btn" onclick="toggleAudio()" class="w-9 h-9 rounded-xl bg-xbox-card border border-xbox-border flex items-center justify-center text-xbox-neon hover:border-xbox-neon transition">
+                    <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Profile Badge & Credits -->
+                <div onclick="showView('profile')" class="flex items-center space-x-3 bg-xbox-card/90 border border-xbox-border hover:border-xbox-neon px-3 py-1.5 rounded-xl cursor-pointer transition">
+                    <div class="relative">
+                        <div id="header-avatar" class="w-8 h-8 rounded-lg bg-xbox-green/30 border border-xbox-neon flex items-center justify-center text-xbox-neon font-bold text-sm">
+                            🎮
+                        </div>
+                        <span id="header-level-badge" class="absolute -bottom-1 -right-1 bg-xbox-neon text-xbox-dark font-black text-[9px] px-1 rounded-full">L1</span>
+                    </div>
+                    <div class="hidden sm:block text-left">
+                        <div id="header-gamertag" class="text-xs font-bold font-orbitron leading-tight text-white">CYBER_SNAKE</div>
+                        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                            <span class="text-cyber-yellow font-mono"><i class="fa-solid fa-coins text-[10px]"></i> <span id="header-credits">0</span></span>
+                            <span class="text-xbox-neon font-mono"><span id="header-xp">0</span> XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-xbox-dark/95 backdrop-blur-md border-t border-xbox-border px-2 py-2 flex justify-around">
+        <button onclick="showView('home')" class="mobile-nav-btn text-center text-xbox-neon">
+            <i class="fa-solid fa-house text-lg block"></i>
+            <span class="text-[10px]">Home</span>
+        </button>
+        <button onclick="showView('modes')" class="mobile-nav-btn text-center text-slate-400">
+            <i class="fa-solid fa-gamepad text-lg block"></i>
+            <span class="text-[10px]">Modes</span>
+        </button>
+        <button onclick="showView('snakes')" class="mobile-nav-btn text-center text-slate-400">
+            <i class="fa-solid fa-worm text-lg block"></i>
+            <span class="text-[10px]">Snakes</span>
+        </button>
+        <button onclick="showView('worlds')" class="mobile-nav-btn text-center text-slate-400">
+            <i class="fa-solid fa-globe text-lg block"></i>
+            <span class="text-[10px]">Worlds</span>
+        </button>
+        <button onclick="showView('profile')" class="mobile-nav-btn text-center text-slate-400">
+            <i class="fa-solid fa-user text-lg block"></i>
+            <span class="text-[10px]">Profile</span>
+        </button>
+    </nav>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 mb-16 lg:mb-6 z-10">
+
+        <!-- ================= VIEW 1: HOME DASHBOARD ================= -->
+        <section id="view-home" class="view-panel space-y-8">
+            <!-- HERO BANNER -->
+            <div class="relative overflow-hidden rounded-3xl glass-panel border border-xbox-neon/30 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 glow-xbox">
+                <div class="space-y-4 max-w-xl z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-xbox-neon/10 border border-xbox-neon/40 text-xbox-neon text-xs font-mono font-bold tracking-widest uppercase">
+                        <i class="fa-solid fa-bolt animate-pulse"></i> Season 5 Active
+                    </div>
+                    <h2 class="font-orbitron font-black text-3xl sm:text-5xl text-white tracking-wide leading-none">
+                        ENTER THE <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-xbox-neon via-cyber-cyan to-cyber-blue text-glow-xbox">SNAKEVERSE</span>
+                    </h2>
+                    <p class="text-slate-300 text-sm sm:text-base">
+                        Experience 12 hyper-charged arcade modes, boss fights, special abilities, and endless survival in a futuristic Xbox arcade ecosystem.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-4 pt-2">
+                        <button onclick="launchGame('classic')" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-xbox-green to-xbox-neon text-xbox-dark font-orbitron font-extrabold text-base tracking-wider hover:brightness-125 transition transform hover:scale-105 glow-xbox flex items-center gap-3">
+                            <i class="fa-solid fa-play text-xl"></i> PLAY NOW
+                        </button>
+                        <button onclick="showView('modes')" class="px-6 py-3.5 rounded-2xl bg-xbox-card hover:bg-xbox-panel border border-xbox-border text-white font-orbitron font-bold text-sm tracking-wider transition">
+                            EXPLORE ALL MODES
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hero Interactive Mini Preview Canvas -->
+                <div class="relative w-full md:w-80 h-56 rounded-2xl overflow-hidden border border-xbox-border bg-black/60 shadow-2xl flex items-center justify-center">
+                    <canvas id="heroPreviewCanvas" class="w-full h-full"></canvas>
+                    <div class="absolute bottom-2 left-2 right-2 px-3 py-1.5 rounded-lg bg-xbox-dark/80 backdrop-blur-sm border border-white/10 flex justify-between items-center text-xs font-mono text-slate-300">
+                        <span><i class="fa-solid fa-circle text-[8px] text-xbox-neon animate-ping mr-1"></i> DASHBOARD PREVIEW</span>
+                        <span class="text-xbox-neon font-bold">60 FPS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD QUICK CARDS & CONTINUED PLAYING -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Continue Playing Card -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-clock-rotate-left text-xbox-neon mr-1"></i> Continue Playing</span>
+                        <span id="last-mode-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-xbox-green/30 text-xbox-neon border border-xbox-neon/30">CLASSIC</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-xbox-card to-xbox-panel border border-xbox-neon/40 flex items-center justify-center text-2xl text-xbox-neon">
+                            <i id="last-mode-icon" class="fa-solid fa-crown"></i>
+                        </div>
+                        <div>
+                            <h3 id="last-mode-title" class="font-orbitron font-bold text-lg text-white">Classic Mode</h3>
+                            <p id="last-mode-desc" class="text-xs text-slate-400">Pure retro snake gameplay with modern combos.</p>
+                        </div>
+                    </div>
+                    <button onclick="resumeLastGame()" class="w-full py-2.5 rounded-xl bg-xbox-green/20 hover:bg-xbox-green/40 border border-xbox-neon/50 text-xbox-neon font-orbitron text-xs font-bold tracking-wider transition">
+                        RESUME SESSION
+                    </button>
+                </div>
+
+                <!-- Featured Character Showcase Card -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-worm text-cyber-cyan mr-1"></i> Active Snake</span>
+                        <span id="home-snake-ability-tag" class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30">DASH</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div id="home-snake-avatar" class="w-14 h-14 rounded-xl bg-gradient-to-br from-cyber-cyan/20 to-xbox-card border border-cyber-cyan/40 flex items-center justify-center text-3xl">
+                            🐍
+                        </div>
+                        <div>
+                            <h3 id="home-snake-name" class="font-orbitron font-bold text-lg text-white">VIPER</h3>
+                            <p id="home-snake-desc" class="text-xs text-slate-400">Starter Cyber-Snake with Dash boost.</p>
+                        </div>
+                    </div>
+                    <button onclick="showView('snakes')" class="w-full py-2.5 rounded-xl bg-cyber-cyan/20 hover:bg-cyber-cyan/40 border border-cyber-cyan/50 text-cyber-cyan font-orbitron text-xs font-bold tracking-wider transition">
+                        CHANGE CHARACTER
+                    </button>
+                </div>
+
+                <!-- Daily Challenge Spotlight -->
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-calendar-star text-cyber-yellow mr-1"></i> Daily Challenge</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyber-yellow/20 text-cyber-yellow border border-cyber-yellow/30">+500 CREDITS</span>
+                    </div>
+                    <div>
+                        <h3 id="home-daily-title" class="font-orbitron font-bold text-base text-white">Boss Slayer</h3>
+                        <p id="home-daily-desc" class="text-xs text-slate-400 mt-1">Defeat Mecha-Wyrm in Boss Rush mode.</p>
+                        <div class="w-full bg-xbox-dark h-2 rounded-full mt-3 overflow-hidden border border-xbox-border">
+                            <div id="home-daily-progress-bar" class="bg-gradient-to-r from-cyber-yellow to-cyber-orange h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                    <button onclick="showView('challenges')" class="w-full py-2.5 rounded-xl bg-cyber-yellow/20 hover:bg-cyber-yellow/40 border border-cyber-yellow/50 text-cyber-yellow font-orbitron text-xs font-bold tracking-wider transition">
+                        VIEW CHALLENGES
+                    </button>
+                </div>
+            </div>
+
+            <!-- FEATURED MODES GRID -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h3 class="font-orbitron font-bold text-xl text-white flex items-center gap-2">
+                            <i class="fa-solid fa-grid-2 text-xbox-neon"></i> GAMEMODE VAULT
+                        </h3>
+                        <p class="text-xs text-slate-400">12 handcrafted arcade experiences tailored for high-stakes competition.</p>
+                    </div>
+                    <button onclick="showView('modes')" class="text-xs font-orbitron font-bold text-xbox-neon hover:underline">
+                        VIEW ALL 12 MODES <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="home-modes-preview">
+                    <!-- Dynamic rendering in JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: GAME MODES VAULT ================= -->
+        <section id="view-modes" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4">
+                <h2 class="font-orbitron font-black text-3xl text-white">SELECT <span class="text-xbox-neon">GAME MODE</span></h2>
+                <p class="text-slate-400 text-sm">Choose from 12 distinct game experiences with individual rules, mechanics, and high score tracking.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="all-modes-grid">
+                <!-- Dynamically populated via JavaScript -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: SNAKE CHARACTERS ================= -->
+        <section id="view-snakes" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4">
+                <h2 class="font-orbitron font-black text-3xl text-white">SNAKE <span class="text-cyber-cyan">ROSTER</span></h2>
+                <p class="text-slate-400 text-sm">Unlock, equip, and master snakes with unique passive stats and game-changing active abilities.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="snakes-grid">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: WORLDS / MAPS ================= -->
+        <section id="view-worlds" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4">
+                <h2 class="font-orbitron font-black text-3xl text-white">ARENA <span class="text-cyber-purple">WORLDS</span></h2>
+                <p class="text-slate-400 text-sm">Select environmental matrix themes with unique visual styles and atmospheric particle lighting.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="worlds-grid">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 5: DAILY CHALLENGES ================= -->
+        <section id="view-challenges" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4 flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-3xl text-white">DAILY <span class="text-cyber-yellow">CHALLENGES</span></h2>
+                    <p class="text-slate-400 text-sm">Complete daily objectives to earn XP and Cyber-Credits.</p>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-xbox-card border border-xbox-border text-xs font-mono text-slate-300">
+                    RESET IN: <span id="challenge-reset-timer" class="text-cyber-yellow font-bold">23:59:59</span>
+                </div>
+            </div>
+
+            <div class="space-y-4 max-w-3xl" id="challenges-list">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 6: ACHIEVEMENTS ================= -->
+        <section id="view-achievements" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4 flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-3xl text-white">CONSOLE <span class="text-xbox-neon">ACHIEVEMENTS</span></h2>
+                    <p class="text-slate-400 text-sm">Unlock badges and boost your Xbox Gamerscore (G).</p>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-xbox-green/20 border border-xbox-neon text-xbox-neon font-orbitron font-bold text-sm">
+                    TOTAL GAMERSCORE: <span id="total-gamerscore-val">0</span> G
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="achievements-grid">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 7: LEADERBOARD ================= -->
+        <section id="view-leaderboard" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-3xl text-white">ARCADE <span class="text-cyber-orange">LEADERBOARD</span></h2>
+                    <p class="text-slate-400 text-sm">Global & local hall of fame rankings.</p>
+                </div>
+                <!-- Filter Dropdown -->
+                <select id="leaderboard-mode-select" onchange="renderLeaderboard()" class="px-4 py-2 rounded-xl bg-xbox-card border border-xbox-border text-xs font-orbitron font-bold text-slate-200 focus:outline-none focus:border-xbox-neon">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <div class="glass-panel rounded-2xl overflow-hidden border border-xbox-border">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-xbox-card text-xs font-orbitron text-slate-400 uppercase tracking-wider border-b border-xbox-border">
+                            <tr>
+                                <th class="p-4">Rank</th>
+                                <th class="p-4">Gamertag</th>
+                                <th class="p-4">Snake Used</th>
+                                <th class="p-4">Score / Time</th>
+                                <th class="p-4">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody" class="divide-y divide-xbox-border/40 font-mono text-slate-300">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 8: PLAYER PROFILE ================= -->
+        <section id="view-profile" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4">
+                <h2 class="font-orbitron font-black text-3xl text-white">PLAYER <span class="text-xbox-neon">PROFILE</span></h2>
+                <p class="text-slate-400 text-sm">Customize your identity, view career stats, and title badges.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Identity Card -->
+                <div class="glass-card rounded-2xl p-6 space-y-6">
+                    <div class="text-center space-y-3">
+                        <div class="relative inline-block">
+                            <div id="profile-avatar-display" class="w-24 h-24 rounded-2xl bg-xbox-green/30 border-2 border-xbox-neon flex items-center justify-center text-5xl mx-auto shadow-xl">
+                                🎮
+                            </div>
+                        </div>
+                        <div>
+                            <input type="text" id="profile-gamertag-input" value="CYBER_SNAKE" maxlength="15" onchange="saveProfileIdentity()" class="text-center font-orbitron font-black text-xl text-white bg-transparent border-b border-dashed border-xbox-border focus:border-xbox-neon focus:outline-none py-1">
+                            <div id="profile-title-display" class="text-xs font-mono text-xbox-neon mt-1">NEON VIPER MASTER</div>
+                        </div>
+                    </div>
+
+                    <!-- Avatar Picker -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-orbitron text-slate-400">CHOOSE EMBLEM</label>
+                        <div class="grid grid-cols-5 gap-2" id="avatar-picker-grid">
+                            <!-- Populated JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Career Stats Grid -->
+                <div class="lg:col-span-2 glass-panel rounded-2xl p-6 space-y-6">
+                    <h3 class="font-orbitron font-bold text-lg text-white border-b border-xbox-border pb-3">CAREER TELEMETRY</h3>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">TOTAL MATCHES</span>
+                            <span id="stat-total-games" class="font-orbitron font-black text-2xl text-white">0</span>
+                        </div>
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">FOOD EATEN</span>
+                            <span id="stat-food-eaten" class="font-orbitron font-black text-2xl text-xbox-neon">0</span>
+                        </div>
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">BOSSES DEFEATED</span>
+                            <span id="stat-bosses-killed" class="font-orbitron font-black text-2xl text-cyber-red">0</span>
+                        </div>
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">HIGHEST COMBO</span>
+                            <span id="stat-highest-combo" class="font-orbitron font-black text-2xl text-cyber-yellow">0x</span>
+                        </div>
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">ABILITIES USED</span>
+                            <span id="stat-abilities-used" class="font-orbitron font-black text-2xl text-cyber-cyan">0</span>
+                        </div>
+                        <div class="bg-xbox-card p-4 rounded-xl border border-xbox-border">
+                            <span class="text-xs text-slate-400 block font-mono">TOTAL GAMERSCORE</span>
+                            <span id="stat-gamerscore" class="font-orbitron font-black text-2xl text-cyber-purple">0 G</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 9: SETTINGS ================= -->
+        <section id="view-settings" class="view-panel space-y-6 hidden">
+            <div class="border-b border-xbox-border pb-4">
+                <h2 class="font-orbitron font-black text-3xl text-white">SYSTEM <span class="text-slate-400">SETTINGS</span></h2>
+                <p class="text-slate-400 text-sm">Configure audio, visual performance, and controls.</p>
+            </div>
+
+            <div class="max-w-2xl space-y-6">
+                <!-- Audio Controls -->
+                <div class="glass-card rounded-2xl p-6 space-y-4">
+                    <h3 class="font-orbitron font-bold text-lg text-white flex items-center gap-2">
+                        <i class="fa-solid fa-volume-high text-xbox-neon"></i> AUDIO SYNTHESIZER
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Master Volume</span>
+                                <span id="val-master-vol" class="font-mono text-xbox-neon">80%</span>
+                            </div>
+                            <input type="range" id="slider-master-vol" min="0" max="100" value="80" oninput="updateAudioSettings()" class="w-full accent-xbox-neon bg-xbox-dark rounded-lg">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>SFX Sound Effects</span>
+                                <span id="val-sfx-vol" class="font-mono text-xbox-neon">100%</span>
+                            </div>
+                            <input type="range" id="slider-sfx-vol" min="0" max="100" value="100" oninput="updateAudioSettings()" class="w-full accent-xbox-neon bg-xbox-dark rounded-lg">
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <span>Ambient Synth Pulse Music</span>
+                            <input type="checkbox" id="check-ambient-audio" onchange="updateAudioSettings()" class="w-5 h-5 accent-xbox-neon rounded cursor-pointer" checked>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video & FX -->
+                <div class="glass-card rounded-2xl p-6 space-y-4">
+                    <h3 class="font-orbitron font-bold text-lg text-white flex items-center gap-2">
+                        <i class="fa-solid fa-display text-cyber-cyan"></i> VISUAL EFFECTS
+                    </h3>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span>Screen Shake on Hits / Explosions</span>
+                            <input type="checkbox" id="check-shake" class="w-5 h-5 accent-xbox-neon rounded cursor-pointer" checked>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Cyber Scanline Filter</span>
+                            <input type="checkbox" id="check-scanlines" onchange="toggleScanlines()" class="w-5 h-5 accent-xbox-neon rounded cursor-pointer" checked>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Data Management -->
+                <div class="glass-card rounded-2xl p-6 space-y-4 border-red-900/30">
+                    <h3 class="font-orbitron font-bold text-lg text-cyber-red flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> DATA MANAGEMENT
+                    </h3>
+                    <p class="text-xs text-slate-400">Wipe all unlockables, credits, career stats, and high scores back to factory default state.</p>
+                    <button onclick="resetDataSave()" class="px-5 py-2.5 rounded-xl bg-cyber-red/20 hover:bg-cyber-red/40 border border-cyber-red text-cyber-red font-orbitron font-bold text-xs tracking-wider transition">
+                        RESET ALL SAVED PROGRESS
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 10: ACTIVE GAME CONSOLE ARENA ================= -->
+        <section id="view-game" class="view-panel space-y-4 hidden">
+            <!-- Game HUD Header Bar -->
+            <div class="glass-panel rounded-2xl p-4 border border-xbox-border flex flex-wrap items-center justify-between gap-4">
+                <!-- Mode & World Title -->
+                <div class="flex items-center gap-3">
+                    <button onclick="pauseGame()" class="w-9 h-9 rounded-xl bg-xbox-card hover:bg-xbox-panel border border-xbox-border flex items-center justify-center text-white text-sm transition">
+                        <i class="fa-solid fa-pause"></i>
+                    </button>
+                    <div>
+                        <div id="game-hud-mode" class="font-orbitron font-black text-lg text-white leading-tight">CLASSIC MODE</div>
+                        <div id="game-hud-world" class="text-xs font-mono text-xbox-neon">NEON GRID ARENA</div>
+                    </div>
+                </div>
+
+                <!-- Mode Specific Counters (Timer, Boss HP, Waves, Moves) -->
+                <div id="game-hud-extra-container" class="hidden sm:flex items-center gap-6 font-orbitron">
+                    <!-- Boss HP Bar -->
+                    <div id="hud-boss-hp-box" class="hidden flex-col w-48">
+                        <div class="flex justify-between text-[11px] font-bold text-cyber-red">
+                            <span id="hud-boss-name">MECHA-WYRM</span>
+                            <span id="hud-boss-hp-text">100%</span>
+                        </div>
+                        <div class="w-full bg-black/60 h-2.5 rounded-full border border-cyber-red/40 overflow-hidden mt-1">
+                            <div id="hud-boss-hp-bar" class="bg-gradient-to-r from-red-600 to-cyber-red h-full w-full transition-all duration-200"></div>
+                        </div>
+                    </div>
+
+                    <!-- Time / Wave / Move Counter -->
+                    <div id="hud-counter-box" class="flex flex-col items-center">
+                        <span id="hud-counter-label" class="text-[10px] text-slate-400 font-mono uppercase">TIME</span>
+                        <span id="hud-counter-val" class="text-xl font-bold text-cyber-cyan font-mono">00:00</span>
+                    </div>
+
+                    <!-- Combo Multiplier -->
+                    <div id="hud-combo-box" class="flex flex-col items-center">
+                        <span class="text-[10px] text-slate-400 font-mono uppercase">COMBO</span>
+                        <span id="hud-combo-val" class="text-xl font-bold text-cyber-yellow font-mono">1x</span>
+                    </div>
+                </div>
+
+                <!-- Score Counter & Active Ability Indicator -->
+                <div class="flex items-center gap-4">
+                    <!-- Ability Gauge -->
+                    <div class="flex items-center gap-2">
+                        <div id="hud-ability-btn" onclick="triggerAbility()" class="relative w-11 h-11 rounded-xl bg-xbox-card border border-xbox-border flex items-center justify-center cursor-pointer transition">
+                            <span id="hud-ability-icon" class="text-xl">⚡</span>
+                            <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
+                                <circle cx="22" cy="22" r="18" stroke="currentColor" stroke-width="3" fill="transparent" class="text-slate-800" />
+                                <circle id="hud-ability-circle" cx="22" cy="22" r="18" stroke="currentColor" stroke-width="3" fill="transparent" stroke-dasharray="113" stroke-dashoffset="0" class="text-xbox-neon transition-all duration-100" />
+                            </svg>
+                        </div>
+                        <div class="hidden md:block text-left">
+                            <div id="hud-ability-name" class="text-xs font-orbitron font-bold text-white">DASH</div>
+                            <div id="hud-ability-status" class="text-[10px] font-mono text-xbox-neon">READY [SPACE]</div>
+                        </div>
+                    </div>
+
+                    <!-- Score Badge -->
+                    <div class="bg-xbox-card border border-xbox-neon/40 px-4 py-1.5 rounded-xl text-right">
+                        <div class="text-[10px] font-mono text-slate-400 uppercase">SCORE</div>
+                        <div id="game-hud-score" class="font-orbitron font-black text-2xl text-xbox-neon leading-none">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chaos Active Modifier Alert Banner -->
+            <div id="hud-chaos-banner" class="hidden w-full py-1.5 px-4 rounded-xl bg-cyber-pink/20 border border-cyber-pink text-center font-orbitron text-xs font-bold text-cyber-pink animate-pulse">
+                🔥 CHAOS EVENT: HYPER SPEED ENGAGED!
+            </div>
+
+            <!-- Game Canvas Arena Wrapper -->
+            <div id="canvas-container" class="relative w-full aspect-square max-w-[650px] mx-auto rounded-3xl overflow-hidden glass-panel border-2 border-xbox-neon/50 shadow-2xl flex items-center justify-center">
+                <canvas id="gameCanvas" class="w-full h-full block bg-black"></canvas>
+                
+                <!-- Floating Toast Notification inside canvas overlay -->
+                <div id="canvas-toast" class="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-none opacity-0 transition-all duration-300 px-4 py-1.5 rounded-full bg-xbox-dark/90 border border-xbox-neon text-xbox-neon font-orbitron font-bold text-sm tracking-wider shadow-lg">
+                    ACHIEVEMENT UNLOCKED!
+                </div>
+            </div>
+
+            <!-- Touch Controls D-Pad + Ability (Visible on touch/mobile or toggled) -->
+            <div class="lg:hidden max-w-sm mx-auto grid grid-cols-3 gap-2 pt-2">
+                <div></div>
+                <button onclick="handleDpadInput('UP')" class="dpad-btn h-14 text-2xl"><i class="fa-solid fa-caret-up"></i></button>
+                <div></div>
+                <button onclick="handleDpadInput('LEFT')" class="dpad-btn h-14 text-2xl"><i class="fa-solid fa-caret-left"></i></button>
+                <button onclick="triggerAbility()" class="dpad-btn h-14 text-xl bg-xbox-green/30 border-xbox-neon text-xbox-neon font-orbitron font-black">ACT</button>
+                <button onclick="handleDpadInput('RIGHT')" class="dpad-btn h-14 text-2xl"><i class="fa-solid fa-caret-right"></i></button>
+                <div></div>
+                <button onclick="handleDpadInput('DOWN')" class="dpad-btn h-14 text-2xl"><i class="fa-solid fa-caret-down"></i></button>
+                <div></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PAUSE MODAL OVERLAY -->
+    <div id="modal-pause" class="fixed inset-0 z-50 bg-xbox-dark/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl border border-xbox-border p-8 max-w-md w-full text-center space-y-6 glow-xbox">
+            <h3 class="font-orbitron font-black text-3xl text-white tracking-wider">GAME <span class="text-xbox-neon">PAUSED</span></h3>
+            
+            <div class="space-y-3">
+                <button onclick="resumeGame()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-xbox-green to-xbox-neon text-xbox-dark font-orbitron font-extrabold text-sm tracking-wider hover:brightness-110 transition">
+                    RESUME GAME
+                </button>
+                <button onclick="restartCurrentGame()" class="w-full py-3.5 rounded-2xl bg-xbox-card hover:bg-xbox-panel border border-xbox-border text-white font-orbitron font-bold text-sm tracking-wider transition">
+                    RESTART MATCH
+                </button>
+                <button onclick="quitToDashboard()" class="w-full py-3.5 rounded-2xl bg-cyber-red/20 hover:bg-cyber-red/40 border border-cyber-red text-cyber-red font-orbitron font-bold text-sm tracking-wider transition">
+                    QUIT TO DASHBOARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / VICTORY SUMMARY MODAL -->
+    <div id="modal-gameover" class="fixed inset-0 z-50 bg-xbox-dark/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl border border-xbox-neon/40 p-6 md:p-8 max-w-lg w-full text-center space-y-6 glow-xbox">
+            <!-- Header Result Title -->
+            <div>
+                <div id="gameover-badge" class="inline-block px-3 py-1 rounded-full bg-cyber-red/20 border border-cyber-red text-cyber-red text-xs font-mono font-bold tracking-widest uppercase mb-2">
+                    GAME OVER
+                </div>
+                <h3 id="gameover-title" class="font-orbitron font-black text-3xl md:text-4xl text-white">MATCH RESULTS</h3>
+            </div>
+
+            <!-- Score Breakdown Card -->
+            <div class="bg-xbox-card p-5 rounded-2xl border border-xbox-border space-y-4">
+                <div class="flex justify-between items-center border-b border-xbox-border pb-3">
+                    <span class="text-xs font-mono text-slate-400">FINAL SCORE</span>
+                    <span id="gameover-score" class="font-orbitron font-black text-3xl text-xbox-neon">0</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-left text-xs font-mono">
+                    <div>
+                        <span class="text-slate-400 block">XP EARNED</span>
+                        <span id="gameover-xp" class="text-sm font-bold text-cyber-cyan">+0 XP</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">CREDITS EARNED</span>
+                        <span id="gameover-credits" class="text-sm font-bold text-cyber-yellow">+0</span>
+                    </div>
+                </div>
+
+                <div id="gameover-record-banner" class="hidden py-1.5 rounded-lg bg-cyber-yellow/20 border border-cyber-yellow text-cyber-yellow font-orbitron text-xs font-bold">
+                    🏆 NEW PERSONAL BEST RECORD!
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4">
+                <button onclick="restartCurrentGame()" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-xbox-green to-xbox-neon text-xbox-dark font-orbitron font-extrabold text-sm tracking-wider hover:brightness-110 transition">
+                    PLAY AGAIN
+                </button>
+                <button onclick="quitToDashboard()" class="flex-1 py-3.5 rounded-2xl bg-xbox-card hover:bg-xbox-panel border border-xbox-border text-white font-orbitron font-bold text-sm tracking-wider transition">
+                    DASHBOARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT ENGINE & APPLICATION LOGIC -->
+    <script>
+        /* ==========================================================================
+           1. GAME DATA DEFINITIONS & DATABASE
+           ========================================================================== */
+        
+        const MODES_DB = {
+            classic: {
+                id: 'classic',
+                title: 'Classic Mode',
+                icon: 'fa-crown',
+                tag: 'STANDARD',
+                color: '#2EE643',
+                desc: 'Traditional retro snake rules. Eat food, grow longer, avoid walls and your own tail.'
+            },
+            endless: {
+                id: 'endless',
+                title: 'Endless Survival',
+                icon: 'fa-infinity',
+                tag: 'ENDLESS',
+                color: '#00D2FF',
+                desc: 'Infinite grid survival with progressive speed scaling and dynamic static obstacles.'
+            },
+            timeattack: {
+                id: 'timeattack',
+                title: 'Time Attack',
+                icon: 'fa-stopwatch',
+                tag: '90s TIMER',
+                color: '#FFD700',
+                desc: '90-second sprint. Collect bonus clocks for extra time and build eating combos.'
+            },
+            maze: {
+                id: 'maze',
+                title: 'Maze Runner',
+                icon: 'fa-dungeon',
+                tag: 'HANDCRAFTED',
+                color: '#9D4EDD',
+                desc: 'Navigate handcrafted labyrinth levels with keys, colored doors, and warp portals.'
+            },
+            survival: {
+                id: 'survival',
+                title: 'Hazard Survival',
+                icon: 'fa-shield-halved',
+                tag: 'WAVE BASED',
+                color: '#FF2A5F',
+                desc: 'Survive incoming wave hazards! Telegraphed laser strikes and meteor zones.'
+            },
+            battle: {
+                id: 'battle',
+                title: 'Snake Battle AI',
+                icon: 'fa-user-ninja',
+                tag: 'ARENA PVP',
+                color: '#FF6B00',
+                desc: 'Compete in a 4-snake arena against smart AI snakes. Cut off AI snakes to eliminate them.'
+            },
+            boss: {
+                id: 'boss',
+                title: 'Boss Rush',
+                icon: 'fa-skull',
+                tag: 'EPIC BOSS',
+                color: '#FF007F',
+                desc: 'Battle giant multi-phase arcade bosses! Collect plasma cores to fire weak-point blasts.'
+            },
+            puzzle: {
+                id: 'puzzle',
+                title: 'Logic Puzzle',
+                icon: 'fa-puzzle-piece',
+                tag: 'MOVE LIMIT',
+                color: '#00F5D4',
+                desc: 'Precision tile puzzles with move counters, pressure switches, teleporters, and target gems.'
+            },
+            speedrun: {
+                id: 'speedrun',
+                title: 'Speedrun Course',
+                icon: 'fa-gauge-high',
+                tag: 'MEDALS',
+                color: '#2EE643',
+                desc: 'Clear target checkpoints as fast as humanly possible to earn Gold & Onyx medals.'
+            },
+            zen: {
+                id: 'zen',
+                title: 'Zen Mode',
+                icon: 'fa-spa',
+                tag: 'RELAXED',
+                color: '#00D2FF',
+                desc: 'No death, no walls, pass through yourself safely with soothing visual color shifts.'
+            },
+            chaos: {
+                id: 'chaos',
+                title: 'Chaos Modifiers',
+                icon: 'fa-dice-d20',
+                tag: 'RANDOM EVENTS',
+                color: '#FF007F',
+                desc: 'Every 10 seconds a chaotic modifier strikes: hyper speed, inverted controls, giant head, magnet pull!'
+            },
+            treasure: {
+                id: 'treasure',
+                title: 'Treasure Radar',
+                icon: 'fa-compass',
+                tag: 'FOG OF WAR',
+                color: '#FFD700',
+                desc: 'Explore dark radar grids with limited visibility to uncover secret chests & ancient relics.'
+            }
+        };
+
+        const SNAKES_DB = {
+            viper: {
+                id: 'viper',
+                name: 'VIPER',
+                avatar: '🐍',
+                color: '#2EE643',
+                abilityName: 'Dash Burst',
+                abilityDesc: 'Bursts 3 steps forward with invulnerability frames.',
+                cooldownSec: 6,
+                price: 0,
+                unlocked: true,
+                stats: { speed: 70, agility: 80, armor: 50 }
+            },
+            volt: {
+                id: 'volt',
+                name: 'VOLT',
+                avatar: '⚡',
+                color: '#00D2FF',
+                abilityName: 'Overdrive Surge',
+                abilityDesc: 'Surges at 2x speed pulling nearby food with 2x score for 5s.',
+                cooldownSec: 10,
+                price: 500,
+                unlocked: false,
+                stats: { speed: 95, agility: 70, armor: 40 }
+            },
+            phantom: {
+                id: 'phantom',
+                name: 'PHANTOM',
+                avatar: '👻',
+                color: '#9D4EDD',
+                abilityName: 'Phase Shift',
+                abilityDesc: 'Becomes ethereal for 4s, phasing through self & walls.',
+                cooldownSec: 12,
+                price: 1200,
+                unlocked: false,
+                stats: { speed: 80, agility: 95, armor: 30 }
+            },
+            titan: {
+                id: 'titan',
+                name: 'TITAN',
+                avatar: '🛡️',
+                color: '#FF6B00',
+                abilityName: 'Aegis Shield',
+                abilityDesc: 'Deploys barrier smashing obstacles & absorbing 1 fatal crash.',
+                cooldownSec: 14,
+                price: 2000,
+                unlocked: false,
+                stats: { speed: 50, agility: 60, armor: 100 }
+            },
+            nova: {
+                id: 'nova',
+                name: 'NOVA',
+                avatar: '💥',
+                color: '#FF007F',
+                abilityName: 'Supernova Pulse',
+                abilityDesc: 'Shockwave clears hazards & turns food into high-value stars.',
+                cooldownSec: 15,
+                price: 3500,
+                unlocked: false,
+                stats: { speed: 85, agility: 85, armor: 70 }
+            },
+            cobra: {
+                id: 'cobra',
+                name: 'CYBER-COBRA',
+                avatar: '👑',
+                color: '#FF2A5F',
+                abilityName: 'Venom Blast',
+                abilityDesc: 'Fires forward plasma bolt destroying hazards & damaging bosses.',
+                cooldownSec: 8,
+                price: 5000,
+                unlocked: false,
+                stats: { speed: 90, agility: 90, armor: 80 }
+            }
+        };
+
+        const WORLDS_DB = {
+            neongrid: {
+                id: 'neongrid',
+                name: 'Neon Grid',
+                color: '#2EE643',
+                bgHex: '#07090E',
+                gridLine: 'rgba(46, 230, 67, 0.15)',
+                unlocked: true,
+                price: 0
+            },
+            cybertokyo: {
+                id: 'cybertokyo',
+                name: 'Cyber Tokyo',
+                color: '#00D2FF',
+                bgHex: '#090D16',
+                gridLine: 'rgba(0, 210, 255, 0.15)',
+                unlocked: true,
+                price: 0
+            },
+            voidcitadel: {
+                id: 'voidcitadel',
+                name: 'Void Citadel',
+                color: '#9D4EDD',
+                bgHex: '#0B0714',
+                gridLine: 'rgba(157, 78, 221, 0.15)',
+                unlocked: false,
+                price: 800
+            },
+            solarforge: {
+                id: 'solarforge',
+                name: 'Solar Forge',
+                color: '#FF6B00',
+                bgHex: '#140A05',
+                gridLine: 'rgba(255, 107, 0, 0.15)',
+                unlocked: false,
+                price: 1500
+            },
+            arctic: {
+                id: 'arctic',
+                name: 'Arctic Mainframe',
+                color: '#00F5D4',
+                bgHex: '#051214',
+                gridLine: 'rgba(0, 245, 212, 0.15)',
+                unlocked: false,
+                price: 2500
+            },
+            matrix: {
+                id: 'matrix',
+                name: 'Bio-Jungle Matrix',
+                color: '#FFD700',
+                bgHex: '#0A1207',
+                gridLine: 'rgba(255, 215, 0, 0.15)',
+                unlocked: false,
+                price: 4000
+            }
+        };
+
+        const ACHIEVEMENTS_DB = [
+            { id: 'first_bite', name: 'First Byte', desc: 'Eat your first food particle.', points: 10, icon: 'fa-utensils', unlocked: false },
+            { id: 'combo_master', name: 'Combo King', desc: 'Reach a 5x score combo multiplier.', points: 25, icon: 'fa-fire', unlocked: false },
+            { id: 'boss_slayer', name: 'Boss Slayer', desc: 'Defeat Mecha-Wyrm in Boss Rush mode.', points: 50, icon: 'fa-skull', unlocked: false },
+            { id: 'speed_demon', name: 'Speed Demon', desc: 'Clear a Speedrun course in under 30s.', points: 40, icon: 'fa-bolt', unlocked: false },
+            { id: 'snake_collector', name: 'Snake Collector', desc: 'Unlock 3 snake characters.', points: 30, icon: 'fa-worm', unlocked: false },
+            { id: 'maze_master', name: 'Labyrinth Specialist', desc: 'Clear a Maze Runner stage.', points: 20, icon: 'fa-dungeon', unlocked: false },
+            { id: 'survivor', name: 'Wave Survivor', desc: 'Survive 5 hazard waves in Survival mode.', points: 35, icon: 'fa-shield-halved', unlocked: false },
+            { id: 'high_scorer', name: 'Arcade Legend', desc: 'Reach 1,000 score in any game mode.', points: 50, icon: 'fa-trophy', unlocked: false }
+        ];
+
+        /* ==========================================================================
+           2. PROCEDURAL WEB AUDIO SYNTHESIZER
+           ========================================================================== */
+        class AudioSynthesizer {
+            constructor() {
+                this.ctx = null;
+                this.masterVol = 0.8;
+                this.sfxVol = 1.0;
+                this.muted = false;
+                this.ambientSynth = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.1) {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal * this.masterVol * this.sfxVol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            playEat() {
+                this.playTone(587.33, 'triangle', 0.08, 0.15); // D5
+                setTimeout(() => this.playTone(880, 'sine', 0.1, 0.2), 60); // A5
+            }
+
+            playAbility() {
+                this.playTone(300, 'sawtooth', 0.2, 0.2);
+                setTimeout(() => this.playTone(600, 'square', 0.25, 0.25), 80);
+            }
+
+            playHit() {
+                this.playTone(120, 'sawtooth', 0.25, 0.3);
+            }
+
+            playGameOver() {
+                this.playTone(300, 'sawtooth', 0.2, 0.2);
+                setTimeout(() => this.playTone(220, 'sawtooth', 0.2, 0.2), 150);
+                setTimeout(() => this.playTone(150, 'sawtooth', 0.4, 0.25), 300);
+            }
+
+            playVictory() {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'triangle', 0.25, 0.25), idx * 120);
+                });
+            }
+
+            playClick() {
+                this.playTone(440, 'sine', 0.04, 0.08);
+            }
+        }
+        const audioSynth = new AudioSynthesizer();
+
+        /* ==========================================================================
+           3. LOCAL STORAGE SAVE ENGINE & APP STATE
+           ========================================================================== */
+        let state = {
+            credits: 250,
+            xp: 0,
+            level: 1,
+            gamertag: 'CYBER_SNAKE',
+            avatar: '🎮',
+            activeSnake: 'viper',
+            activeWorld: 'neongrid',
+            lastMode: 'classic',
+            unlockedSnakes: ['viper'],
+            unlockedWorlds: ['neongrid', 'cybertokyo'],
+            highScores: {},
+            achievements: {},
+            stats: {
+                gamesPlayed: 0,
+                foodEaten: 0,
+                bossesKilled: 0,
+                highestCombo: 1,
+                abilitiesUsed: 0,
+                gamerscore: 0
+            },
+            dailyChallenge: {
+                title: 'Boss Slayer',
+                desc: 'Defeat Mecha-Wyrm in Boss Rush mode.',
+                progress: 0,
+                target: 1,
+                reward: 500,
+                claimed: false
+            }
+        };
+
+        function loadState() {
+            const saved = localStorage.getItem('SNAKEVERSE_SAVE_V3');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                } catch(e){}
+            }
+            updateHeaderUI();
+        }
+
+        function saveState() {
+            localStorage.setItem('SNAKEVERSE_SAVE_V3', JSON.stringify(state));
+            updateHeaderUI();
+        }
+
+        function addXP(amount) {
+            state.xp += amount;
+            const nextLvlXp = state.level * 300;
+            if (state.xp >= nextLvlXp) {
+                state.level++;
+                state.credits += 100;
+                audioSynth.playVictory();
+                showCanvasToast(`LEVEL UP! REACHED LEVEL ${state.level}`);
+            }
+            saveState();
+        }
+
+        function addCredits(amount) {
+            state.credits += amount;
+            saveState();
+        }
+
+        /* ==========================================================================
+           4. GAME ENGINE CANVAS & PLAYABLE ARENA
+           ========================================================================== */
+        class SnakeGameEngine {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gridCount = 22; // 22x22 grid
+                this.tileSize = 20;
+                this.running = false;
+                this.paused = false;
+
+                // Game state
+                this.mode = 'classic';
+                this.snake = [];
+                this.dir = { x: 1, y: 0 };
+                this.nextDir = { x: 1, y: 0 };
+                this.food = { x: 5, y: 5, type: 'normal' };
+                this.score = 0;
+                this.combo = 1;
+                this.comboTimer = 0;
+                this.ticks = 0;
+                this.speed = 120; // ms per tick
+
+                // Hazards & Entities
+                this.hazards = [];
+                this.telegraphed = [];
+                this.aiSnakes = [];
+                this.particles = [];
+                this.floatingTexts = [];
+
+                // Abilities
+                this.abilityCooldown = 0;
+                this.abilityActiveTime = 0;
+                this.isPhaseActive = false;
+                this.isShieldActive = false;
+                this.isOverdriveActive = false;
+
+                // Boss state
+                this.boss = null;
+
+                // Chaos mode state
+                this.chaosTimer = 0;
+                this.chaosEvent = 'NORMAL';
+
+                // Mode metrics
+                this.timeLeft = 90;
+                this.waves = 1;
+                this.movesLeft = 30;
+
+                this.bindControls();
+            }
+
+            init(modeId) {
+                this.mode = modeId;
+                state.lastMode = modeId;
+                saveState();
+
+                // Resize canvas resolution
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = 600;
+                this.canvas.height = 600;
+                this.tileSize = this.canvas.width / this.gridCount;
+
+                // Spawn snake at center
+                const center = Math.floor(this.gridCount / 2);
+                this.snake = [
+                    { x: center, y: center },
+                    { x: center - 1, y: center },
+                    { x: center - 2, y: center }
+                ];
+                this.dir = { x: 1, y: 0 };
+                this.nextDir = { x: 1, y: 0 };
+
+                this.score = 0;
+                this.combo = 1;
+                this.comboTimer = 0;
+                this.ticks = 0;
+                this.particles = [];
+                this.floatingTexts = [];
+
+                // Setup active character speed
+                const snakeStats = SNAKES_DB[state.activeSnake];
+                this.speed = 130 - (snakeStats.stats.speed * 0.6);
+
+                // Setup Mode specifics
+                this.setupModeSpecifics();
+
+                this.spawnFood();
+                this.running = true;
+                this.paused = false;
+
+                // Update HUD Text
+                document.getElementById('game-hud-mode').innerText = MODES_DB[modeId].title.toUpperCase();
+                document.getElementById('game-hud-world').innerText = WORLDS_DB[state.activeWorld].name.toUpperCase();
+                document.getElementById('game-hud-score').innerText = '0';
+                document.getElementById('hud-combo-val').innerText = '1x';
+
+                this.updateHUDCounters();
+                this.loop();
+            }
+
+            setupModeSpecifics() {
+                this.hazards = [];
+                this.telegraphed = [];
+                this.aiSnakes = [];
+                this.boss = null;
+                document.getElementById('hud-boss-hp-box').classList.add('hidden');
+                document.getElementById('hud-chaos-banner').classList.add('hidden');
+
+                if (this.mode === 'timeattack') {
+                    this.timeLeft = 90;
+                } else if (this.mode === 'survival') {
+                    this.waves = 1;
+                    this.timeLeft = 15;
+                } else if (this.mode === 'puzzle') {
+                    this.movesLeft = 25;
+                } else if (this.mode === 'battle') {
+                    // Spawn 2 AI snakes
+                    this.aiSnakes = [
+                        { id: 1, name: 'RED_BOT', color: '#FF2A5F', body: [{x: 3, y: 3}, {x: 3, y: 2}], dir: {x: 1, y: 0} },
+                        { id: 2, name: 'CYBER_BOT', color: '#00D2FF', body: [{x: 18, y: 18}, {x: 18, y: 19}], dir: {x: -1, y: 0} }
+                    ];
+                } else if (this.mode === 'boss') {
+                    this.boss = {
+                        name: 'MECHA-WYRM',
+                        hp: 100,
+                        maxHp: 100,
+                        x: 8,
+                        y: 3,
+                        w: 6,
+                        h: 4,
+                        dir: 1
+                    };
+                    document.getElementById('hud-boss-hp-box').classList.remove('hidden');
+                    document.getElementById('hud-boss-name').innerText = this.boss.name;
+                    document.getElementById('hud-boss-hp-bar').style.width = '100%';
+                }
+            }
+
+            bindControls() {
+                window.addEventListener('keydown', (e) => {
+                    if (!this.running || this.paused) return;
+                    if (['ArrowUp', 'KeyW'].includes(e.code) && this.dir.y === 0) this.nextDir = { x: 0, y: -1 };
+                    if (['ArrowDown', 'KeyS'].includes(e.code) && this.dir.y === 0) this.nextDir = { x: 0, y: 1 };
+                    if (['ArrowLeft', 'KeyA'].includes(e.code) && this.dir.x === 0) this.nextDir = { x: -1, y: 0 };
+                    if (['ArrowRight', 'KeyD'].includes(e.code) && this.dir.x === 0) this.nextDir = { x: 1, y: 0 };
+                    if (['Space', 'ShiftLeft'].includes(e.code)) this.useAbility();
+                    if (['Escape', 'KeyP'].includes(e.code)) pauseGame();
+                });
+            }
+
+            useAbility() {
+                if (this.abilityCooldown > 0 || !this.running || this.paused) return;
+                
+                const char = SNAKES_DB[state.activeSnake];
+                this.abilityCooldown = char.cooldownSec * 10; // in ticks (~10 ticks/sec)
+                state.stats.abilitiesUsed++;
+                audioSynth.playAbility();
+
+                if (state.activeSnake === 'viper') {
+                    // Dash forward 3 tiles safely
+                    for(let i=0; i<3; i++) {
+                        const newHead = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
+                        this.snake.unshift(newHead);
+                        this.snake.pop();
+                    }
+                    this.addParticleBurst(this.snake[0].x, this.snake[0].y, '#2EE643', 15);
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'DASH!', '#2EE643');
+                } else if (state.activeSnake === 'volt') {
+                    this.isOverdriveActive = true;
+                    this.abilityActiveTime = 50; // 5 seconds
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'OVERDRIVE 2X!', '#00D2FF');
+                } else if (state.activeSnake === 'phantom') {
+                    this.isPhaseActive = true;
+                    this.abilityActiveTime = 40; // 4 seconds
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'PHASE SHIFT!', '#9D4EDD');
+                } else if (state.activeSnake === 'titan') {
+                    this.isShieldActive = true;
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'AEGIS SHIELD!', '#FF6B00');
+                } else if (state.activeSnake === 'nova') {
+                    // Clear hazards around head
+                    this.hazards = [];
+                    this.addParticleBurst(this.snake[0].x, this.snake[0].y, '#FF007F', 30);
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'SUPERNOVA PULSE!', '#FF007F');
+                } else if (state.activeSnake === 'cobra') {
+                    // Fire projectile forward
+                    if (this.boss) {
+                        this.boss.hp -= 20;
+                        this.addFloatingText(this.boss.x + 2, this.boss.y, '-20 HP', '#FF2A5F');
+                        this.checkBossHP();
+                    }
+                    this.addFloatingText(this.snake[0].x, this.snake[0].y, 'VENOM BLAST!', '#FF2A5F');
+                }
+            }
+
+            loop() {
+                if (!this.running) return;
+
+                if (!this.paused) {
+                    this.update();
+                    this.render();
+                }
+
+                setTimeout(() => this.loop(), this.isOverdriveActive ? this.speed / 1.5 : this.speed);
+            }
+
+            update() {
+                this.ticks++;
+                this.dir = { ...this.nextDir };
+
+                // Ability Timers
+                if (this.abilityCooldown > 0) this.abilityCooldown--;
+                if (this.abilityActiveTime > 0) {
+                    this.abilityActiveTime--;
+                    if (this.abilityActiveTime === 0) {
+                        this.isPhaseActive = false;
+                        this.isOverdriveActive = false;
+                    }
+                }
+
+                // Combo Timer Decay
+                if (this.comboTimer > 0) {
+                    this.comboTimer--;
+                    if (this.comboTimer === 0) this.combo = 1;
+                }
+
+                // Calculate next head position
+                const head = {
+                    x: this.snake[0].x + this.dir.x,
+                    y: this.snake[0].y + this.dir.y
+                };
+
+                // Grid Boundary Collisions
+                if (head.x < 0 || head.x >= this.gridCount || head.y < 0 || head.y >= this.gridCount) {
+                    if (this.mode === 'zen') {
+                        // Edge wrapping
+                        if (head.x < 0) head.x = this.gridCount - 1;
+                        if (head.x >= this.gridCount) head.x = 0;
+                        if (head.y < 0) head.y = this.gridCount - 1;
+                        if (head.y >= this.gridCount) head.y = 0;
+                    } else if (this.isShieldActive) {
+                        this.isShieldActive = false;
+                        this.addFloatingText(head.x, head.y, 'SHIELD BROKEN!', '#FF6B00');
+                        return;
+                    } else if (!this.isPhaseActive) {
+                        this.gameOver();
+                        return;
+                    }
+                }
+
+                // Self Collision Check
+                if (!this.isPhaseActive && this.mode !== 'zen') {
+                    for (let segment of this.snake) {
+                        if (head.x === segment.x && head.y === segment.y) {
+                            if (this.isShieldActive) {
+                                this.isShieldActive = false;
+                                this.addFloatingText(head.x, head.y, 'SHIELD SAVED!', '#FF6B00');
+                                break;
+                            }
+                            this.gameOver();
+                            return;
+                        }
+                    }
+                }
+
+                // Move Snake
+                this.snake.unshift(head);
+
+                // Food Collision Check
+                if (head.x === this.food.x && head.y === this.food.y) {
+                    this.eatFood();
+                } else {
+                    this.snake.pop();
+                }
+
+                // Mode Specific Updates
+                this.updateModeLogic();
+
+                // Update Particle Animations
+                this.particles.forEach((p, index) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.05;
+                    if (p.life <= 0) this.particles.splice(index, 1);
+                });
+            }
+
+            eatFood() {
+                audioSynth.playEat();
+                const char = SNAKES_DB[state.activeSnake];
+                let points = 10 * this.combo;
+                if (this.isOverdriveActive) points *= 2;
+
+                this.score += points;
+                this.combo = Math.min(this.combo + 1, 8);
+                this.comboTimer = 30; // 3 sec window
+
+                state.stats.foodEaten++;
+                state.stats.highestCombo = Math.max(state.stats.highestCombo, this.combo);
+
+                this.addParticleBurst(this.food.x, this.food.y, char.color, 10);
+                this.addFloatingText(this.food.x, this.food.y, `+${points}`, char.color);
+
+                // Check Achievement
+                unlockAchievement('first_bite');
+                if (this.combo >= 5) unlockAchievement('combo_master');
+                if (this.score >= 1000) unlockAchievement('high_scorer');
+
+                document.getElementById('game-hud-score').innerText = this.score;
+                document.getElementById('hud-combo-val').innerText = `${this.combo}x`;
+
+                this.spawnFood();
+            }
+
+            spawnFood() {
+                let valid = false;
+                while (!valid) {
+                    this.food.x = Math.floor(Math.random() * this.gridCount);
+                    this.food.y = Math.floor(Math.random() * this.gridCount);
+                    valid = !this.snake.some(s => s.x === this.food.x && s.y === this.food.y);
+                }
+            }
+
+            updateModeLogic() {
+                // Time Attack Countdown
+                if (this.mode === 'timeattack' && this.ticks % 10 === 0) {
+                    this.timeLeft--;
+                    if (this.timeLeft <= 0) this.gameOver();
+                    this.updateHUDCounters();
+                }
+
+                // Survival Wave Hazards
+                if (this.mode === 'survival') {
+                    if (this.ticks % 40 === 0) {
+                        // Telegraph laser sweep
+                        const row = Math.floor(Math.random() * this.gridCount);
+                        this.telegraphed.push({ type: 'row', index: row, timer: 15 });
+                    }
+                    this.telegraphed.forEach((t, i) => {
+                        t.timer--;
+                        if (t.timer <= 0) {
+                            // Strike laser
+                            if (t.type === 'row' && this.snake[0].y === t.index && !this.isPhaseActive) {
+                                this.gameOver();
+                            }
+                            this.telegraphed.splice(i, 1);
+                        }
+                    });
+                }
+
+                // AI Snakes Battle Logic
+                if (this.mode === 'battle') {
+                    this.aiSnakes.forEach((ai) => {
+                        // Simple AI steering toward food
+                        const aiHead = ai.body[0];
+                        if (aiHead.x < this.food.x) ai.dir = { x: 1, y: 0 };
+                        else if (aiHead.x > this.food.x) ai.dir = { x: -1, y: 0 };
+                        else if (aiHead.y < this.food.y) ai.dir = { x: 0, y: 1 };
+                        else if (aiHead.y > this.food.y) ai.dir = { x: 0, y: -1 };
+
+                        const newHead = { x: aiHead.x + ai.dir.x, y: aiHead.y + ai.dir.y };
+                        ai.body.unshift(newHead);
+                        ai.body.pop();
+
+                        // Check if AI collides with player body
+                        this.snake.forEach((seg) => {
+                            if (newHead.x === seg.x && newHead.y === seg.y) {
+                                this.score += 200;
+                                this.addFloatingText(newHead.x, newHead.y, 'AI DESTROYED! +200', '#FF2A5F');
+                                ai.body = [{ x: 2, y: 2 }]; // Respawn
+                            }
+                        });
+                    });
+                }
+
+                // Boss Rush Logic
+                if (this.mode === 'boss' && this.boss) {
+                    // Move boss back and forth
+                    if (this.ticks % 8 === 0) {
+                        this.boss.x += this.boss.dir;
+                        if (this.boss.x <= 1 || this.boss.x + this.boss.w >= this.gridCount - 1) {
+                            this.boss.dir *= -1;
+                        }
+                    }
+                }
+            }
+
+            checkBossHP() {
+                if (!this.boss) return;
+                const pct = Math.max(0, (this.boss.hp / this.boss.maxHp) * 100);
+                document.getElementById('hud-boss-hp-bar').style.width = `${pct}%`;
+                document.getElementById('hud-boss-hp-text').innerText = `${Math.ceil(pct)}%`;
+
+                if (this.boss.hp <= 0) {
+                    state.stats.bossesKilled++;
+                    unlockAchievement('boss_slayer');
+                    this.score += 1000;
+                    audioSynth.playVictory();
+                    this.gameOver(true);
+                }
+            }
+
+            updateHUDCounters() {
+                const label = document.getElementById('hud-counter-label');
+                const val = document.getElementById('hud-counter-val');
+                if (this.mode === 'timeattack') {
+                    label.innerText = 'TIME LEFT';
+                    val.innerText = `${this.timeLeft}s`;
+                } else if (this.mode === 'survival') {
+                    label.innerText = 'WAVE';
+                    val.innerText = `W-0${this.waves}`;
+                } else if (this.mode === 'puzzle') {
+                    label.innerText = 'MOVES';
+                    val.innerText = `${this.movesLeft}`;
+                } else {
+                    label.innerText = 'STATUS';
+                    val.innerText = 'ACTIVE';
+                }
+
+                // Ability Circular Gauge Update
+                const char = SNAKES_DB[state.activeSnake];
+                const total = char.cooldownSec * 10;
+                const ratio = this.abilityCooldown / total;
+                const circle = document.getElementById('hud-ability-circle');
+                const status = document.getElementById('hud-ability-status');
+                const btn = document.getElementById('hud-ability-btn');
+
+                if (circle) circle.style.strokeDashoffset = (113 * ratio).toString();
+                if (this.abilityCooldown === 0) {
+                    status.innerText = 'READY [SPACE]';
+                    status.className = 'text-[10px] font-mono text-xbox-neon';
+                    btn.classList.add('ability-ready');
+                } else {
+                    status.innerText = `${Math.ceil(this.abilityCooldown / 10)}s`;
+                    status.className = 'text-[10px] font-mono text-slate-400';
+                    btn.classList.remove('ability-ready');
+                }
+            }
+
+            addParticleBurst(gx, gy, color, count = 10) {
+                const px = (gx + 0.5) * this.tileSize;
+                const py = (gy + 0.5) * this.tileSize;
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 3 + 1;
+                    this.particles.push({
+                        x: px, y: py,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        color: color,
+                        life: 1.0
+                    });
+                }
+            }
+
+            addFloatingText(gx, gy, text, color) {
+                this.floatingTexts.push({
+                    x: (gx + 0.5) * this.tileSize,
+                    y: gy * this.tileSize,
+                    text: text,
+                    color: color,
+                    life: 1.0
+                });
+            }
+
+            render() {
+                const world = WORLDS_DB[state.activeWorld];
+                this.ctx.fillStyle = world.bgHex;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw World Grid Lines
+                this.ctx.strokeStyle = world.gridLine;
+                this.ctx.lineWidth = 1;
+                for (let i = 0; i <= this.gridCount; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(i * this.tileSize, 0);
+                    this.ctx.lineTo(i * this.tileSize, this.canvas.height);
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, i * this.tileSize);
+                    this.ctx.lineTo(this.canvas.width, i * this.tileSize);
+                    this.ctx.stroke();
+                }
+
+                // Render Telegraphed Hazard Lines (Survival Mode)
+                this.telegraphed.forEach(t => {
+                    this.ctx.fillStyle = 'rgba(255, 42, 95, 0.3)';
+                    this.ctx.fillRect(0, t.index * this.tileSize, this.canvas.width, this.tileSize);
+                });
+
+                // Render Food Particle
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.shadowColor = '#FFD700';
+                this.ctx.shadowBlur = 12;
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    (this.food.x + 0.5) * this.tileSize,
+                    (this.food.y + 0.5) * this.tileSize,
+                    this.tileSize * 0.35, 0, Math.PI * 2
+                );
+                this.ctx.fill();
+                this.ctx.shadowBlur = 0;
+
+                // Render Player Snake Segments
+                const char = SNAKES_DB[state.activeSnake];
+                this.snake.forEach((seg, index) => {
+                    const px = seg.x * this.tileSize;
+                    const py = seg.y * this.tileSize;
+                    
+                    if (index === 0) {
+                        // Snake Head
+                        this.ctx.fillStyle = char.color;
+                        this.ctx.shadowColor = char.color;
+                        this.ctx.shadowBlur = 15;
+                        this.ctx.fillRect(px + 1, py + 1, this.tileSize - 2, this.tileSize - 2);
+                        this.ctx.shadowBlur = 0;
+                    } else {
+                        // Body Segments
+                        this.ctx.fillStyle = this.isPhaseActive ? 'rgba(157, 78, 221, 0.5)' : char.color;
+                        this.ctx.fillRect(px + 2, py + 2, this.tileSize - 4, this.tileSize - 4);
+                    }
+                });
+
+                // Render AI Snakes (Battle Mode)
+                this.aiSnakes.forEach((ai) => {
+                    this.ctx.fillStyle = ai.color;
+                    ai.body.forEach((seg) => {
+                        this.ctx.fillRect(seg.x * this.tileSize + 2, seg.y * this.tileSize + 2, this.tileSize - 4, this.tileSize - 4);
+                    });
+                });
+
+                // Render Boss Wyrm (Boss Rush Mode)
+                if (this.boss) {
+                    this.ctx.fillStyle = '#FF2A5F';
+                    this.ctx.shadowColor = '#FF2A5F';
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.fillRect(
+                        this.boss.x * this.tileSize,
+                        this.boss.y * this.tileSize,
+                        this.boss.w * this.tileSize,
+                        this.boss.h * this.tileSize
+                    );
+                    this.ctx.shadowBlur = 0;
+                }
+
+                // Render Particles
+                this.particles.forEach((p) => {
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.globalAlpha = p.life;
+                    this.ctx.fillRect(p.x, p.y, 4, 4);
+                });
+                this.ctx.globalAlpha = 1.0;
+
+                // Render Floating Score Text
+                this.floatingTexts.forEach((ft, index) => {
+                    this.ctx.fillStyle = ft.color;
+                    this.ctx.font = 'bold 14px Orbitron';
+                    this.ctx.fillText(ft.text, ft.x, ft.y);
+                    ft.y -= 0.5;
+                    ft.life -= 0.02;
+                    if (ft.life <= 0) this.floatingTexts.splice(index, 1);
+                });
+            }
+
+            gameOver(victory = false) {
+                this.running = false;
+                audioSynth.playGameOver();
+
+                state.stats.gamesPlayed++;
+                const earnedXP = Math.floor(this.score * 0.5) + 50;
+                const earnedCredits = Math.floor(this.score * 0.2) + 20;
+
+                addXP(earnedXP);
+                addCredits(earnedCredits);
+
+                // High score update
+                let newRecord = false;
+                if (!state.highScores[this.mode] || this.score > state.highScores[this.mode]) {
+                    state.highScores[this.mode] = this.score;
+                    newRecord = true;
+                }
+                saveState();
+
+                // Show Game Over Overlay
+                document.getElementById('gameover-badge').innerText = victory ? 'VICTORY ACHIVED' : 'GAME OVER';
+                document.getElementById('gameover-badge').className = victory ? 
+                    'inline-block px-3 py-1 rounded-full bg-xbox-neon/20 border border-xbox-neon text-xbox-neon text-xs font-mono font-bold tracking-widest uppercase mb-2' :
+                    'inline-block px-3 py-1 rounded-full bg-cyber-red/20 border border-cyber-red text-cyber-red text-xs font-mono font-bold tracking-widest uppercase mb-2';
+
+                document.getElementById('gameover-score').innerText = this.score;
+                document.getElementById('gameover-xp').innerText = `+${earnedXP} XP`;
+                document.getElementById('gameover-credits').innerText = `+${earnedCredits}`;
+
+                if (newRecord) {
+                    document.getElementById('gameover-record-banner').classList.remove('hidden');
+                } else {
+                    document.getElementById('gameover-record-banner').classList.add('hidden');
+                }
+
+                document.getElementById('modal-gameover').classList.remove('hidden');
+            }
+        }
+
+        const engine = new SnakeGameEngine();
+
+        /* ==========================================================================
+           5. UI MANAGER & CONTROLLERS
+           ========================================================================== */
+        function showView(viewId) {
+            audioSynth.playClick();
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+            // Highlight Active Nav Button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5';
+            });
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) {
+                activeNav.className = 'nav-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-xbox-neon bg-xbox-green/20';
+            }
+
+            // View Specific Renders
+            if (viewId === 'home') renderHomeView();
+            if (viewId === 'modes') renderModesView();
+            if (viewId === 'snakes') renderSnakesView();
+            if (viewId === 'worlds') renderWorldsView();
+            if (viewId === 'challenges') renderChallengesView();
+            if (viewId === 'achievements') renderAchievementsView();
+            if (viewId === 'leaderboard') renderLeaderboard();
+            if (viewId === 'profile') renderProfileView();
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('header-credits').innerText = state.credits;
+            document.getElementById('header-xp').innerText = state.xp;
+            document.getElementById('header-level-badge').innerText = `L${state.level}`;
+            document.getElementById('header-gamertag').innerText = state.gamertag;
+            document.getElementById('header-avatar').innerText = state.avatar;
+        }
+
+        function renderHomeView() {
+            // Render Modes Preview Grid
+            const modesGrid = document.getElementById('home-modes-preview');
+            modesGrid.innerHTML = '';
+            
+            Object.values(MODES_DB).slice(0, 4).forEach(m => {
+                modesGrid.innerHTML += `
+                    <div onclick="launchGame('${m.id}')" class="glass-card rounded-2xl p-4 flex flex-col justify-between space-y-3 cursor-pointer">
+                        <div class="flex justify-between items-center">
+                            <span class="w-10 h-10 rounded-xl bg-xbox-card border border-xbox-border flex items-center justify-center text-xbox-neon text-lg">
+                                <i class="fa-solid ${m.icon}"></i>
+                            </span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-xbox-dark text-slate-400 border border-xbox-border">${m.tag}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-orbitron font-bold text-base text-white">${m.title}</h4>
+                            <p class="text-xs text-slate-400 line-clamp-2 mt-1">${m.desc}</p>
+                        </div>
+                        <div class="text-xs font-mono text-xbox-neon font-bold flex justify-between items-center border-t border-xbox-border/40 pt-2">
+                            <span>BEST: ${state.highScores[m.id] || 0}</span>
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Update Active Snake Card
+            const snake = SNAKES_DB[state.activeSnake];
+            document.getElementById('home-snake-name').innerText = snake.name;
+            document.getElementById('home-snake-desc').innerText = snake.abilityDesc;
+            document.getElementById('home-snake-avatar').innerText = snake.avatar;
+            document.getElementById('home-snake-ability-tag').innerText = snake.abilityName.toUpperCase();
+        }
+
+        function renderModesView() {
+            const grid = document.getElementById('all-modes-grid');
+            grid.innerHTML = '';
+            
+            Object.values(MODES_DB).forEach(m => {
+                grid.innerHTML += `
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="w-12 h-12 rounded-xl bg-xbox-card border border-xbox-border flex items-center justify-center text-xbox-neon text-xl">
+                                <i class="fa-solid ${m.icon}"></i>
+                            </span>
+                            <span class="text-[10px] font-mono px-2 py-1 rounded bg-xbox-dark text-xbox-neon border border-xbox-neon/30">${m.tag}</span>
+                        </div>
+                        <div>
+                            <h3 class="font-orbitron font-bold text-lg text-white">${m.title}</h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">${m.desc}</p>
+                        </div>
+                        <div class="space-y-3 pt-2 border-t border-xbox-border/50">
+                            <div class="flex justify-between text-xs font-mono">
+                                <span class="text-slate-400">HIGH SCORE</span>
+                                <span class="text-cyber-yellow font-bold">${state.highScores[m.id] || 0}</span>
+                            </div>
+                            <button onclick="launchGame('${m.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-xbox-green to-xbox-neon text-xbox-dark font-orbitron font-bold text-xs tracking-wider hover:brightness-110 transition">
+                                LAUNCH MODE
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderSnakesView() {
+            const grid = document.getElementById('snakes-grid');
+            grid.innerHTML = '';
+
+            Object.values(SNAKES_DB).forEach(s => {
+                const isUnlocked = state.unlockedSnakes.includes(s.id);
+                const isEquipped = state.activeSnake === s.id;
+
+                grid.innerHTML += `
+                    <div class="glass-card rounded-2xl p-6 space-y-5 relative overflow-hidden">
+                        ${isEquipped ? '<span class="absolute top-3 right-3 px-2 py-0.5 rounded bg-xbox-neon text-xbox-dark font-orbitron font-extrabold text-[10px]">EQUIPPED</span>' : ''}
+                        
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-xbox-card border border-xbox-border flex items-center justify-center text-4xl shadow-inner">
+                                ${s.avatar}
+                            </div>
+                            <div>
+                                <h3 class="font-orbitron font-black text-xl text-white">${s.name}</h3>
+                                <div class="text-xs font-mono text-xbox-neon mt-0.5"><i class="fa-solid fa-bolt mr-1"></i>${s.abilityName}</div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-300 leading-relaxed bg-xbox-dark/50 p-3 rounded-xl border border-xbox-border/40">
+                            ${s.abilityDesc}
+                        </p>
+
+                        <!-- Stat Bars -->
+                        <div class="space-y-2 text-xs font-mono">
+                            <div>
+                                <div class="flex justify-between text-slate-400 mb-1"><span>SPEED</span><span>${s.stats.speed}%</span></div>
+                                <div class="w-full bg-xbox-dark h-1.5 rounded-full overflow-hidden border border-xbox-border">
+                                    <div class="bg-xbox-neon h-full" style="width: ${s.stats.speed}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-400 mb-1"><span>AGILITY</span><span>${s.stats.agility}%</span></div>
+                                <div class="w-full bg-xbox-dark h-1.5 rounded-full overflow-hidden border border-xbox-border">
+                                    <div class="bg-cyber-cyan h-full" style="width: ${s.stats.agility}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div>
+                            ${isUnlocked ? `
+                                <button onclick="equipSnake('${s.id}')" ${isEquipped ? 'disabled' : ''} class="w-full py-3 rounded-xl ${isEquipped ? 'bg-xbox-card text-slate-500 border border-xbox-border' : 'bg-xbox-green/20 hover:bg-xbox-green/40 border border-xbox-neon text-xbox-neon'} font-orbitron font-bold text-xs tracking-wider transition">
+                                    ${isEquipped ? 'ACTIVE CHAR' : 'EQUIP SNAKE'}
+                                </button>
+                            ` : `
+                                <button onclick="unlockSnake('${s.id}')" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyber-yellow to-cyber-orange text-xbox-dark font-orbitron font-extrabold text-xs tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-lock"></i> UNLOCK FOR ${s.price} CREDITS
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderWorldsView() {
+            const grid = document.getElementById('worlds-grid');
+            grid.innerHTML = '';
+
+            Object.values(WORLDS_DB).forEach(w => {
+                const isUnlocked = state.unlockedWorlds.includes(w.id);
+                const isEquipped = state.activeWorld === w.id;
+
+                grid.innerHTML += `
+                    <div class="glass-card rounded-2xl p-5 space-y-4">
+                        <div class="h-32 rounded-xl bg-xbox-dark border border-xbox-border relative overflow-hidden flex items-center justify-center" style="background-color: ${w.bgHex}">
+                            <div class="font-orbitron font-black text-xl text-white tracking-widest" style="color: ${w.color}">${w.name.toUpperCase()}</div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="font-orbitron font-bold text-base text-white">${w.name}</span>
+                            ${isEquipped ? '<span class="text-xs font-mono text-xbox-neon"><i class="fa-solid fa-check"></i> ACTIVE</span>' : ''}
+                        </div>
+
+                        ${isUnlocked ? `
+                            <button onclick="equipWorld('${w.id}')" ${isEquipped ? 'disabled' : ''} class="w-full py-2.5 rounded-xl ${isEquipped ? 'bg-xbox-card text-slate-500 border border-xbox-border' : 'bg-cyber-purple/20 hover:bg-cyber-purple/40 border border-cyber-purple text-cyber-purple'} font-orbitron font-bold text-xs tracking-wider transition">
+                                ${isEquipped ? 'EQUIPPED' : 'SELECT ARENA'}
+                            </button>
+                        ` : `
+                            <button onclick="unlockWorld('${w.id}')" class="w-full py-2.5 rounded-xl bg-cyber-yellow/20 hover:bg-cyber-yellow/40 border border-cyber-yellow text-cyber-yellow font-orbitron font-bold text-xs tracking-wider transition">
+                                UNLOCK (${w.price} CREDITS)
+                            </button>
+                        `}
+                    </div>
+                `;
+            });
+        }
+
+        function renderChallengesView() {
+            const list = document.getElementById('challenges-list');
+            const c = state.dailyChallenge;
+            list.innerHTML = `
+                <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="space-y-2">
+                        <span class="px-2.5 py-0.5 rounded text-[10px] font-mono bg-cyber-yellow/20 text-cyber-yellow border border-cyber-yellow/30">DAILY TASK</span>
+                        <h3 class="font-orbitron font-bold text-xl text-white">${c.title}</h3>
+                        <p class="text-xs text-slate-400">${c.desc}</p>
+                    </div>
+
+                    <div class="w-full sm:w-auto text-right space-y-3">
+                        <div class="text-xs font-mono text-cyber-yellow font-bold">+${c.reward} CREDITS</div>
+                        <button onclick="claimDailyReward()" ${c.claimed ? 'disabled' : ''} class="w-full sm:w-auto px-6 py-2.5 rounded-xl ${c.claimed ? 'bg-xbox-card text-slate-500 border border-xbox-border' : 'bg-gradient-to-r from-cyber-yellow to-cyber-orange text-xbox-dark font-orbitron font-bold text-xs'} tracking-wider transition">
+                            ${c.claimed ? 'CLAIMED' : 'CLAIM REWARD'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAchievementsView() {
+            const grid = document.getElementById('achievements-grid');
+            grid.innerHTML = '';
+            let totalG = 0;
+
+            ACHIEVEMENTS_DB.forEach(a => {
+                const isUnlocked = state.achievements[a.id];
+                if (isUnlocked) totalG += a.points;
+
+                grid.innerHTML += `
+                    <div class="glass-card rounded-2xl p-5 flex items-center gap-4 ${isUnlocked ? 'border-xbox-neon/50' : 'opacity-60'}">
+                        <div class="w-12 h-12 rounded-xl ${isUnlocked ? 'bg-xbox-green/20 text-xbox-neon border border-xbox-neon' : 'bg-xbox-card text-slate-500 border border-xbox-border'} flex items-center justify-center text-xl">
+                            <i class="fa-solid ${a.icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-orbitron font-bold text-base text-white">${a.name}</h4>
+                                <span class="font-mono text-xs text-xbox-neon font-bold">+${a.points} G</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">${a.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('total-gamerscore-val').innerText = totalG;
+            state.stats.gamerscore = totalG;
+        }
+
+        function renderLeaderboard() {
+            const select = document.getElementById('leaderboard-mode-select');
+            if (select.children.length === 0) {
+                Object.values(MODES_DB).forEach(m => {
+                    select.innerHTML += `<option value="${m.id}">${m.title}</option>`;
+                });
+            }
+
+            const activeMode = select.value || 'classic';
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = '';
+
+            const mockRankings = [
+                { rank: 1, tag: 'CYBER_VIPER_99', snake: 'VOLT', score: (state.highScores[activeMode] || 500) + 400, date: '2026-11-20' },
+                { rank: 2, tag: state.gamertag, snake: SNAKES_DB[state.activeSnake].name, score: state.highScores[activeMode] || 0, date: 'TODAY' },
+                { rank: 3, tag: 'NEON_GHOST', snake: 'PHANTOM', score: Math.max(100, (state.highScores[activeMode] || 200) - 100), date: '2026-11-19' }
+            ];
+
+            mockRankings.sort((a,b) => b.score - a.score).forEach((r, index) => {
+                tbody.innerHTML += `
+                    <tr class="${r.tag === state.gamertag ? 'bg-xbox-green/10 text-xbox-neon font-bold' : ''}">
+                        <td class="p-4">#${index + 1}</td>
+                        <td class="p-4 flex items-center gap-2">
+                            <span>${r.tag}</span>
+                        </td>
+                        <td class="p-4">${r.snake}</td>
+                        <td class="p-4 text-cyber-yellow font-bold">${r.score}</td>
+                        <td class="p-4 text-slate-500 text-xs">${r.date}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderProfileView() {
+            document.getElementById('profile-gamertag-input').value = state.gamertag;
+            document.getElementById('profile-avatar-display').innerText = state.avatar;
+            document.getElementById('stat-total-games').innerText = state.stats.gamesPlayed;
+            document.getElementById('stat-food-eaten').innerText = state.stats.foodEaten;
+            document.getElementById('stat-bosses-killed').innerText = state.stats.bossesKilled;
+            document.getElementById('stat-highest-combo').innerText = `${state.stats.highestCombo}x`;
+            document.getElementById('stat-abilities-used').innerText = state.stats.abilitiesUsed;
+            document.getElementById('stat-gamerscore').innerText = `${state.stats.gamerscore} G`;
+
+            const picker = document.getElementById('avatar-picker-grid');
+            picker.innerHTML = '';
+            ['🎮', '🐍', '⚡', '👻', '🛡️', '💥', '👑', '👾', '🚀', '🔥'].forEach(emoji => {
+                picker.innerHTML += `
+                    <button onclick="selectAvatar('${emoji}')" class="w-10 h-10 rounded-xl bg-xbox-card hover:bg-xbox-panel border border-xbox-border flex items-center justify-center text-xl transition">
+                        ${emoji}
+                    </button>
+                `;
+            });
+        }
+
+        /* ==========================================================================
+           6. ACTIONS & GAME LIFECYCLE
+           ========================================================================== */
+        function launchGame(modeId) {
+            showView('game');
+            engine.init(modeId);
+        }
+
+        function resumeLastGame() {
+            launchGame(state.lastMode || 'classic');
+        }
+
+        function triggerAbility() {
+            engine.useAbility();
+        }
+
+        function handleDpadInput(dir) {
+            if (dir === 'UP' && engine.dir.y === 0) engine.nextDir = { x: 0, y: -1 };
+            if (dir === 'DOWN' && engine.dir.y === 0) engine.nextDir = { x: 0, y: 1 };
+            if (dir === 'LEFT' && engine.dir.x === 0) engine.nextDir = { x: -1, y: 0 };
+            if (dir === 'RIGHT' && engine.dir.x === 0) engine.nextDir = { x: 1, y: 0 };
+        }
+
+        function pauseGame() {
+            engine.paused = true;
+            document.getElementById('modal-pause').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            document.getElementById('modal-pause').classList.add('hidden');
+            engine.paused = false;
+        }
+
+        function restartCurrentGame() {
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            engine.init(engine.mode);
+        }
+
+        function quitToDashboard() {
+            engine.running = false;
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            showView('home');
+        }
+
+        function equipSnake(id) {
+            state.activeSnake = id;
+            saveState();
+            renderSnakesView();
+        }
+
+        function unlockSnake(id) {
+            const s = SNAKES_DB[id];
+            if (state.credits >= s.price) {
+                state.credits -= s.price;
+                state.unlockedSnakes.push(id);
+                state.activeSnake = id;
+                audioSynth.playVictory();
+                saveState();
+                renderSnakesView();
+                unlockAchievement('snake_collector');
+            }
+        }
+
+        function equipWorld(id) {
+            state.activeWorld = id;
+            saveState();
+            renderWorldsView();
+        }
+
+        function unlockWorld(id) {
+            const w = WORLDS_DB[id];
+            if (state.credits >= w.price) {
+                state.credits -= w.price;
+                state.unlockedWorlds.push(id);
+                state.activeWorld = id;
+                audioSynth.playVictory();
+                saveState();
+                renderWorldsView();
+            }
+        }
+
+        function unlockAchievement(id) {
+            if (!state.achievements[id]) {
+                state.achievements[id] = true;
+                const a = ACHIEVEMENTS_DB.find(x => x.id === id);
+                if (a) {
+                    audioSynth.playVictory();
+                    showCanvasToast(`UNLOCKED: ${a.name} (+${a.points}G)`);
+                }
+                saveState();
+            }
+        }
+
+        function showCanvasToast(msg) {
+            const toast = document.getElementById('canvas-toast');
+            if (toast) {
+                toast.innerText = msg;
+                toast.classList.remove('opacity-0');
+                setTimeout(() => toast.classList.add('opacity-0'), 2500);
+            }
+        }
+
+        function claimDailyReward() {
+            if (!state.dailyChallenge.claimed) {
+                state.dailyChallenge.claimed = true;
+                addCredits(state.dailyChallenge.reward);
+                audioSynth.playVictory();
+                renderChallengesView();
+            }
+        }
+
+        function saveProfileIdentity() {
+            state.gamertag = document.getElementById('profile-gamertag-input').value.toUpperCase();
+            saveState();
+        }
+
+        function selectAvatar(emoji) {
+            state.avatar = emoji;
+            saveState();
+            renderProfileView();
+        }
+
+        function toggleAudio() {
+            audioSynth.muted = !audioSynth.muted;
+            document.getElementById('audio-icon').className = audioSynth.muted ? 'fa-solid fa-volume-xmark text-slate-500' : 'fa-solid fa-volume-high text-xbox-neon';
+        }
+
+        function updateAudioSettings() {
+            const val = document.getElementById('slider-master-vol').value;
+            audioSynth.masterVol = val / 100;
+            document.getElementById('val-master-vol').innerText = `${val}%`;
+        }
+
+        function toggleScanlines() {
+            const checked = document.getElementById('check-scanlines').checked;
+            if (checked) document.body.classList.add('scanlines');
+            else document.body.classList.remove('scanlines');
+        }
+
+        function resetDataSave() {
+            localStorage.removeItem('SNAKEVERSE_SAVE_V3');
+            location.reload();
+        }
+
+        /* ==========================================================================
+           7. INITIALIZATION ON WINDOW LOAD
+           ========================================================================== */
+        window.onload = function() {
+            loadState();
+            showView('home');
+
+            // Render Hero Background Particle Preview
+            const bgCanvas = document.getElementById('bgCanvas');
+            const bgCtx = bgCanvas.getContext('2d');
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+
+            const bgParticles = Array.from({ length: 40 }, () => ({
+                x: Math.random() * bgCanvas.width,
+                y: Math.random() * bgCanvas.height,
+                r: Math.random() * 2 + 1,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5
+            }));
+
+            function animateBG() {
+                bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+                bgCtx.fillStyle = '#2EE643';
+                bgParticles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0) p.x = bgCanvas.width;
+                    if (p.x > bgCanvas.width) p.x = 0;
+                    if (p.y < 0) p.y = bgCanvas.height;
+                    if (p.y > bgCanvas.height) p.y = 0;
+
+                    bgCtx.beginPath();
+                    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    bgCtx.fill();
+                });
+                requestAnimationFrame(animateBG);
+            }
+            animateBG();
+        };
+    </script>
+</body>
+</html>
